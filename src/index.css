@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=BBH+Sans+Bartle&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=BBH+Sans+Bogle&display=swap');
 
 * {
     scroll-behavior: smooth;
@@ -8,6 +9,20 @@
     font-style: normal;
 }
 
+.hhh {
+
+    font-family: "BBH Sans Bogle", sans-serif;
+    font-weight: 100;
+    font-style: normal;
+    letter-spacing: 5px;
+    background-color: rgba(27, 140, 102, 0.432);
+}
+
 body {
     background-color: #0E0C15;
+}
+
+.flip {
+    color: rgb(51, 169, 92);
+
 }

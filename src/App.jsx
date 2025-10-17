@@ -1,7 +1,7 @@
 import Aurora from "./components/Aurora";
 import Header from "./components/Header";
-import PixelBlast from "./components/PixelBlast";
-import Prism from "./components/Prism";
+import MainContent from "./components/MainContent";
+
 const App = () => {
   return (
     <>
@@ -9,33 +9,21 @@ const App = () => {
         id="header"
         className="w-[97%] md:w-[95%] lg:w-[90%] h-screen mx-auto border-x-3 border-[#252134]">
         <Header />
-        <div className="w-full h-screen relative">
-          {/* <PixelBlast
-            variant="diamond"
-            pixelSize={5}
-            color="#39b399"
-            patternScale={3}
-            patternDensity={1.2}
-            pixelSizeJitter={0.5}
-            enableRipples
-            rippleSpeed={0.4}
-            rippleThickness={0.12}
-            rippleIntensityScale={1.5}
-            liquid={true}
-            liquidStrength={0.12}
-            liquidRadius={1.2}
-            liquidWobbleSpeed={5}
-            speed={0.6}
-            edgeFade={0.25}
-          /> */}
+        <div className="w-full h-screen absolute top-0 left-0 pointer-events-none">
           <Aurora
-            colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
-            blend={0.5}
-            amplitude={1.0}
+            animationType="rotate3d"
+            intensity={2}
             speed={0.5}
+            distort={1.0}
+            paused={false}
+            offset={{ x: 0, y: 0 }}
+            hoverDampness={0.25}
+            rayCount={24}
+            mixBlendMode="lighten"
+            colors={["#28a495", "#105163", "#ffffff"]}
           />
-          <div className="w-full h-screen top-0 absolute mt-20 flex justify-center items-center pointer-events-none"></div>
         </div>
+        <MainContent />
       </div>
     </>
   );

@@ -1,0 +1,11 @@
+import Hero from "./Hero";
+
+const MainContent = () => {
+  return (
+    <main className="w-full min-h-screen mt-25 flex justify-center items-center flex-col ">
+      <Hero />
+    </main>
+  );
+};
+
+export default MainContent;

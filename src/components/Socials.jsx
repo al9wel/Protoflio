@@ -3,7 +3,7 @@ import styled from "styled-components";
 const Socials = () => {
   return (
     <StyledWrapper>
-      <div className="btn">
+      <div className="btn h-[40px] lg:h-[50px]">
         <span className=" pointer-events-none">Socials</span>
         <div className="container">
           <a
@@ -66,7 +66,6 @@ const StyledWrapper = styled.div`
     overflow: hidden;
     cursor: pointer;
     width: 150px;
-    height: 50px;
     background-color: #39b399;
     border-radius: 80px;
     border: none;

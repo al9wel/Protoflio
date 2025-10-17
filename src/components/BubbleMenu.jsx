@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import Socials from "./Socials";
 
 const DEFAULT_ITEMS = [
   {
