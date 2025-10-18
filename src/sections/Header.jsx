@@ -1,6 +1,6 @@
 import logo from "../assets/images/logo.svg";
-import BubbleMenu from "./BubbleMenu";
-import Socials from "./Socials";
+import BubbleMenu from "../components/BubbleMenu";
+import Socials from "../components/Socials";
 import { motion } from "motion/react";
 const navItems = [
   {

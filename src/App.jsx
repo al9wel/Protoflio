@@ -1,6 +1,6 @@
 import Aurora from "./components/Aurora";
-import Header from "./components/Header";
-import MainContent from "./components/MainContent";
+import Header from "./sections/Header";
+import MainContent from "./sections/MainContent";
 
 const App = () => {
   return (

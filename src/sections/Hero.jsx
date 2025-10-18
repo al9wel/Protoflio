@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import TiltedCard from "./TitledCard";
+import TiltedCard from "../components/TitledCard";
 import al9wel from "../assets/images/al9wel3.jpeg";
-import { FlipWords } from "./FlipWords";
-import ASCIIText from "./TextType";
-import TextType from "./TextType";
+import { FlipWords } from "../components/FlipWords";
+import TextType from "../components/TextType";
 const Hero = () => {
   const [show, setShow] = useState(true);
   useEffect(() => {
