@@ -37,26 +37,26 @@ export default function TiltedCard({
   const [autoTilt, setAutoTilt] = useState(true);
 
   // 💫 حركة تلقائية أوضح وأكثر ديناميكية
-  useEffect(() => {
-    if (!autoTilt) return;
+  //   useEffect(() => {
+  //     if (!autoTilt) return;
 
-    const controlsX = animate(rotateX, [0, 10, 0, -10, 0], {
-      duration: 4, // أسرع
-      repeat: Infinity,
-      ease: "easeInOut",
-    });
+  //     const controlsX = animate(rotateX, [0, 10, 0, -10, 0], {
+  //       duration: 4, // أسرع
+  //       repeat: Infinity,
+  //       ease: "easeInOut",
+  //     });
 
-    const controlsY = animate(rotateY, [0, -10, 0, 10, 0], {
-      duration: 4,
-      repeat: Infinity,
-      ease: "easeInOut",
-    });
+  //     const controlsY = animate(rotateY, [0, -10, 0, 10, 0], {
+  //       duration: 4,
+  //       repeat: Infinity,
+  //       ease: "easeInOut",
+  //     });
 
-    return () => {
-      controlsX.stop();
-      controlsY.stop();
-    };
-  }, [autoTilt, rotateX, rotateY]);
+  //     return () => {
+  //       controlsX.stop();
+  //       controlsY.stop();
+  //     };
+  //   }, [autoTilt, rotateX, rotateY]);
 
   function handleMouse(e) {
     if (!ref.current) return;
@@ -101,7 +101,7 @@ export default function TiltedCard({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 1, ease: "backOut" }}
       ref={ref}
-      className=" absolute top-[-80px] lg:top[40-px] right-[-70px] md:right-0 w-full h-full [perspective:1000px] flex flex-col items-center justify-center"
+      className=" relative sm:absolute top-[-80px] lg:top[40-px] right-0 w-full h-full [perspective:1000px] flex flex-col items-center justify-center"
       style={{
         height: containerHeight,
         width: containerWidth,

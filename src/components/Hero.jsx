@@ -39,11 +39,12 @@ const Hero = () => {
               </p>
             }
           />
+          <h1 style={{ marginTop: "-120px" }} className="block sm:hidden"></h1>
           <FlipWords
             words={["Portflio", "Website", "Design"]}
-            className="flip mt-[-20px] ml-[-6px] md:mt-[-30px] md:ml-[-12px] text-gray-200 tracking-wider text-4xl md:text-7xl "
+            className="flip sm:mt-[-20px] ml-[-6px] md:mt-[-30px] md:ml-[-12px] text-gray-200 tracking-wider text-4xl md:text-7xl "
           />
-          <p className="mt-2 text-gray-300 max-w-45 sm:max-w-80 md:max-w-90 lg:max-w-140 p-2 tracking-wider uppercase text-[12px] sm:text-[16px] md:text-[17px] lg:text-[19px]">
+          <p className="mt-2 text-gray-300 max-w-200 sm:max-w-80 md:max-w-90 lg:max-w-140 p-2 tracking-wider uppercase text-[14px] sm:text-[16px] md:text-[17px] lg:text-[19px]">
             hello my name is salem alswil im{" "}
             <span className=" text-teal-800 font-bold">frontend</span> devlolper
             welcom
