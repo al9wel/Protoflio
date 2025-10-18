@@ -5,9 +5,7 @@ import MainContent from "./sections/MainContent";
 const App = () => {
   return (
     <>
-      <div
-        id="header"
-        className="w-[97%] md:w-[95%] lg:w-[90%] h-screen mx-auto border-x-3 border-[#252134]">
+      <div className="w-[97%] md:w-[95%] lg:w-[90%] mx-auto border-x border-[#252134]">
         <Header />
         <div className="w-full h-screen absolute top-0 left-0 pointer-events-none">
           <Aurora
@@ -19,7 +17,7 @@ const App = () => {
             noiseIntensity={0.15}
           />
         </div>
-        <div className="w-full h-screen absolute top-0 left-0 pointer-events-none bg-gray-950/40"></div>
+        <div className="w-full absolute top-0 left-0 pointer-events-none bg-gray-950/40"></div>
         <MainContent />
       </div>
     </>

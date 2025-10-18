@@ -21,7 +21,7 @@ const Hero = () => {
           borderRadius: show ? "12px" : "0px",
         }}
         transition={{ duration: 1, ease: "backOut" }}
-        className="w-[97%] md:w-[95%] lg:w-[90%] bg-gray-400/20 backdrop-blur-xl mt-22 round m-0 p-0 h-100 relative ">
+        className="w-[97%] md:w-[95%] lg:w-[90%] bg-gray-400/20 backdrop-blur-xl mt-10 md:mt-22 round m-0 p-2 md:pb-8 relative ">
         <TiltedCard
           imageSrc={al9wel}
           altText="Kendrick Lamar - GNX Album Cover"

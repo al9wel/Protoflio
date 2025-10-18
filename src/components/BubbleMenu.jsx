@@ -193,7 +193,6 @@ export default function BubbleMenu({
           }
         }
       `}</style>
-
       <button
         type="button"
         className={[
@@ -238,7 +237,7 @@ export default function BubbleMenu({
           ref={overlayRef}
           className={[
             "bubble-menu-items",
-            useFixedPosition ? "fixed" : "absolute",
+            useFixedPosition ? "fixed" : "absolute ",
             "inset-0",
             "flex items-center justify-center",
             "pointer-events-none",
@@ -249,9 +248,9 @@ export default function BubbleMenu({
             className={[
               "pill-list",
               "list-none m-0 px-6",
-              "w-full max-w-[1600px] mx-auto",
-              "flex flex-wrap",
-              "gap-x-0 gap-y-1",
+              "w-full max-w-[1600px] mx-auto bg-black/90 h-[600px] absolute top-20",
+              " block",
+              "",
               "pointer-events-auto",
             ].join(" ")}
             role="menu"
@@ -263,7 +262,7 @@ export default function BubbleMenu({
                 role="none"
                 className={[
                   "pill-col",
-                  "flex justify-center items-stretch",
+                  "flex justify-center items-stretch my-8",
                   "[flex:0_0_calc(100%/3)]",
                   "box-border",
                 ].join(" ")}>
