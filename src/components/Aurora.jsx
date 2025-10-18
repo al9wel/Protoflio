@@ -1,475 +1,155 @@
-import { useEffect, useRef } from "react";
-import { Renderer, Program, Mesh, Triangle, Texture } from "ogl";
+import { useRef, useEffect } from "react";
+import { Renderer, Program, Mesh, Triangle, Vec2 } from "ogl";
 
-const vertexShader = `#version 300 es
-in vec2 position;
-in vec2 uv;
-out vec2 vUv;
-void main() {
-    vUv = uv;
-    gl_Position = vec4(position, 0.0, 1.0);
-}
+const vertex = `
+attribute vec2 position;
+void main(){gl_Position=vec4(position,0.0,1.0);}
 `;
 
-const fragmentShader = `#version 300 es
-precision highp float;
-precision highp int;
-
-out vec4 fragColor;
-
-uniform vec2  uResolution;
+const fragment = `
+#ifdef GL_ES
+precision lowp float;
+#endif
+uniform vec2 uResolution;
 uniform float uTime;
+uniform float uHueShift;
+uniform float uNoise;
+uniform float uScan;
+uniform float uScanFreq;
+uniform float uWarp;
+#define iTime uTime
+#define iResolution uResolution
 
-uniform float uIntensity;
-uniform float uSpeed;
-uniform int   uAnimType;
-uniform vec2  uMouse;
-uniform int   uColorCount;
-uniform float uDistort;
-uniform vec2  uOffset;
-uniform sampler2D uGradient;
-uniform float uNoiseAmount;
-uniform int   uRayCount;
+vec4 buf[8];
+float rand(vec2 c){return fract(sin(dot(c,vec2(12.9898,78.233)))*43758.5453);}
 
-float hash21(vec2 p){
-    p = floor(p);
-    float f = 52.9829189 * fract(dot(p, vec2(0.065, 0.005)));
-    return fract(f);
+mat3 rgb2yiq=mat3(0.299,0.587,0.114,0.596,-0.274,-0.322,0.211,-0.523,0.312);
+mat3 yiq2rgb=mat3(1.0,0.956,0.621,1.0,-0.272,-0.647,1.0,-1.106,1.703);
+
+vec3 hueShiftRGB(vec3 col,float deg){
+    vec3 yiq=rgb2yiq*col;
+    float rad=radians(deg);
+    float cosh=cos(rad),sinh=sin(rad);
+    vec3 yiqShift=vec3(yiq.x,yiq.y*cosh-yiq.z*sinh,yiq.y*sinh+yiq.z*cosh);
+    return clamp(yiq2rgb*yiqShift,0.0,1.0);
 }
 
-mat2 rot30(){ return mat2(0.8, -0.5, 0.5, 0.8); }
+vec4 sigmoid(vec4 x){return 1./(1.+exp(-x));}
 
-float layeredNoise(vec2 fragPx){
-    vec2 p = mod(fragPx + vec2(uTime * 30.0, -uTime * 21.0), 1024.0);
-    vec2 q = rot30() * p;
-    float n = 0.0;
-    n += 0.40 * hash21(q);
-    n += 0.25 * hash21(q * 2.0 + 17.0);
-    n += 0.20 * hash21(q * 4.0 + 47.0);
-    n += 0.10 * hash21(q * 8.0 + 113.0);
-    n += 0.05 * hash21(q * 16.0 + 191.0);
-    return n;
+vec4 cppn_fn(vec2 coordinate,float in0,float in1,float in2){
+    buf[6]=vec4(coordinate.x,coordinate.y,0.3948333106474662+in0,0.36+in1);
+    buf[7]=vec4(0.14+in2,sqrt(coordinate.x*coordinate.x+coordinate.y*coordinate.y),0.,0.);
+    buf[0]=mat4(vec4(6.5404263,-3.6126034,0.7590882,-1.13613),vec4(2.4582713,3.1660357,1.2219609,0.06276096),vec4(-5.478085,-6.159632,1.8701609,-4.7742867),vec4(6.039214,-5.542865,-0.90925294,3.251348))*buf[6]+mat4(vec4(0.8473259,-5.722911,3.975766,1.6522468),vec4(-0.24321538,0.5839259,-1.7661959,-5.350116),vec4(0.,0.,0.,0.),vec4(0.,0.,0.,0.))*buf[7]+vec4(0.21808943,1.1243913,-1.7969975,5.0294676);
+    buf[1]=mat4(vec4(-3.3522482,-6.0612736,0.55641043,-4.4719114),vec4(0.8631464,1.7432913,5.643898,1.6106541),vec4(2.4941394,-3.5012043,1.7184316,6.357333),vec4(3.310376,8.209261,1.1355612,-1.165539))*buf[6]+mat4(vec4(5.24046,-13.034365,0.009859298,15.870829),vec4(2.987511,3.129433,-0.89023495,-1.6822904),vec4(0.,0.,0.,0.),vec4(0.,0.,0.,0.))*buf[7]+vec4(-5.9457836,-6.573602,-0.8812491,1.5436668);
+    buf[0]=sigmoid(buf[0]);buf[1]=sigmoid(buf[1]);
+    buf[2]=mat4(vec4(-15.219568,8.095543,-2.429353,-1.9381982),vec4(-5.951362,4.3115187,2.6393783,1.274315),vec4(-7.3145227,6.7297835,5.2473326,5.9411426),vec4(5.0796127,8.979051,-1.7278991,-1.158976))*buf[6]+mat4(vec4(-11.967154,-11.608155,6.1486754,11.237008),vec4(2.124141,-6.263192,-1.7050359,-0.7021966),vec4(0.,0.,0.,0.),vec4(0.,0.,0.,0.))*buf[7]+vec4(-4.17164,-3.2281182,-4.576417,-3.6401186);
+    buf[3]=mat4(vec4(3.1832156,-13.738922,1.879223,3.233465),vec4(0.64300746,12.768129,1.9141049,0.50990224),vec4(-0.049295485,4.4807224,1.4733979,1.801449),vec4(5.0039253,13.000481,3.3991797,-4.5561905))*buf[6]+mat4(vec4(-0.1285731,7.720628,-3.1425676,4.742367),vec4(0.6393625,3.714393,-0.8108378,-0.39174938),vec4(0.,0.,0.,0.),vec4(0.,0.,0.,0.))*buf[7]+vec4(-1.1811101,-21.621881,0.7851888,1.2329718);
+    buf[2]=sigmoid(buf[2]);buf[3]=sigmoid(buf[3]);
+    buf[4]=mat4(vec4(5.214916,-7.183024,2.7228765,2.6592617),vec4(-5.601878,-25.3591,4.067988,0.4602802),vec4(-10.57759,24.286327,21.102104,37.546658),vec4(4.3024497,-1.9625226,2.3458803,-1.372816))*buf[0]+mat4(vec4(-17.6526,-10.507558,2.2587414,12.462782),vec4(6.265566,-502.75443,-12.642513,0.9112289),vec4(-10.983244,20.741234,-9.701768,-0.7635988),vec4(5.383626,1.4819539,-4.1911616,-4.8444734))*buf[1]+mat4(vec4(12.785233,-16.345072,-0.39901125,1.7955981),vec4(-30.48365,-1.8345358,1.4542528,-1.1118771),vec4(19.872723,-7.337935,-42.941723,-98.52709),vec4(8.337645,-2.7312303,-2.2927687,-36.142323))*buf[2]+mat4(vec4(-16.298317,3.5471997,-0.44300047,-9.444417),vec4(57.5077,-35.609753,16.163465,-4.1534753),vec4(-0.07470326,-3.8656476,-7.0901804,3.1523974),vec4(-12.559385,-7.077619,1.490437,-0.8211543))*buf[3]+vec4(-7.67914,15.927437,1.3207729,-1.6686112);
+    buf[5]=mat4(vec4(-1.4109162,-0.372762,-3.770383,-21.367174),vec4(-6.2103205,-9.35908,0.92529047,8.82561),vec4(11.460242,-22.348068,13.625772,-18.693201),vec4(-0.3429052,-3.9905605,-2.4626114,-0.45033523))*buf[0]+mat4(vec4(7.3481627,-4.3661838,-6.3037653,-3.868115),vec4(1.5462853,6.5488915,1.9701879,-0.58291394),vec4(6.5858274,-2.2180402,3.7127688,-1.3730392),vec4(-5.7973905,10.134961,-2.3395722,-5.965605))*buf[1]+mat4(vec4(-2.5132585,-6.6685553,-1.4029363,-0.16285264),vec4(-0.37908727,0.53738135,4.389061,-1.3024765),vec4(-0.70647055,2.0111287,-5.1659346,-3.728635),vec4(-13.562562,10.487719,-0.9173751,-2.6487076))*buf[2]+mat4(vec4(-8.645013,6.5546675,-6.3944063,-5.5933375),vec4(-0.57783127,-1.077275,36.91025,5.736769),vec4(14.283112,3.7146652,7.1452246,-4.5958776),vec4(2.7192075,3.6021907,-4.366337,-2.3653464))*buf[3]+vec4(-5.9000807,-4.329569,1.2427121,8.59503);
+    buf[4]=sigmoid(buf[4]);buf[5]=sigmoid(buf[5]);
+    buf[6]=mat4(vec4(-1.61102,0.7970257,1.4675229,0.20917463),vec4(-28.793737,-7.1390953,1.5025433,4.656581),vec4(-10.94861,39.66238,0.74318546,-10.095605),vec4(-0.7229728,-1.5483948,0.7301322,2.1687684))*buf[0]+mat4(vec4(3.2547753,21.489103,-1.0194173,-3.3100595),vec4(-3.7316632,-3.3792162,-7.223193,-0.23685838),vec4(13.1804495,0.7916005,5.338587,5.687114),vec4(-4.167605,-17.798311,-6.815736,-1.6451967))*buf[1]+mat4(vec4(0.604885,-7.800309,-7.213122,-2.741014),vec4(-3.522382,-0.12359311,-0.5258442,0.43852118),vec4(9.6752825,-22.853785,2.062431,0.099892326),vec4(-4.3196306,-17.730087,2.5184598,5.30267))*buf[2]+mat4(vec4(-6.545563,-15.790176,-6.0438633,-5.415399),vec4(-43.591583,28.551912,-16.00161,18.84728),vec4(4.212382,8.394307,3.0958717,8.657522),vec4(-5.0237565,-4.450633,-4.4768,-5.5010443))*buf[3]+mat4(vec4(1.6985557,-67.05806,6.897715,1.9004834),vec4(1.8680354,2.3915145,2.5231109,4.081538),vec4(11.158006,1.7294737,2.0738268,7.386411),vec4(-4.256034,-306.24686,8.258898,-17.132736))*buf[4]+mat4(vec4(1.6889864,-4.5852966,3.8534803,-6.3482175),vec4(1.3543309,-1.2640043,9.932754,2.9079645),vec4(-5.2770967,0.07150358,-0.13962056,3.3269649),vec4(28.34703,-4.918278,6.1044083,4.085355))*buf[5]+vec4(6.6818056,12.522166,-3.7075126,-4.104386);
+    buf[7]=mat4(vec4(-8.265602,-4.7027016,5.098234,0.7509808),vec4(8.6507845,-17.15949,16.51939,-8.884479),vec4(-4.036479,-2.3946867,-2.6055532,-1.9866527),vec4(-2.2167742,-1.8135649,-5.9759874,4.8846445))*buf[0]+mat4(vec4(6.7790847,3.5076547,-2.8191125,-2.7028968),vec4(-5.743024,-0.27844876,1.4958696,-5.0517144),vec4(13.122226,15.735168,-2.9397483,-4.101023),vec4(-14.375265,-5.030483,-6.2599335,2.9848232))*buf[1]+mat4(vec4(4.0950394,-0.94011575,-5.674733,4.755022),vec4(4.3809423,4.8310084,1.7425908,-3.437416),vec4(2.117492,0.16342592,-104.56341,16.949184),vec4(-5.22543,-2.994248,3.8350096,-1.9364246))*buf[2]+mat4(vec4(-5.900337,1.7946124,-13.604192,-3.8060522),vec4(6.6583457,31.911177,25.164474,91.81147),vec4(11.840538,4.1503043,-0.7314397,6.768467),vec4(-6.3967767,4.034772,6.1714606,-0.32874924))*buf[3]+mat4(vec4(3.4992442,-196.91893,-8.923708,2.8142626),vec4(3.4806502,-3.1846354,5.1725626,5.1804223),vec4(-2.4009497,15.585794,1.2863957,2.0252278),vec4(-71.25271,-62.441242,-8.138444,0.50670296))*buf[4]+mat4(vec4(-12.291733,-11.176166,-7.3474145,4.390294),vec4(10.805477,5.6337385,-0.9385842,-4.7348723),vec4(-12.869276,-7.039391,5.3029537,7.5436664),vec4(1.4593618,8.91898,3.5101583,5.840625))*buf[5]+vec4(2.2415268,-6.705987,-0.98861027,-2.117676);
+    buf[6]=sigmoid(buf[6]);buf[7]=sigmoid(buf[7]);
+    buf[0]=mat4(vec4(1.6794263,1.3817469,2.9625452,0.),vec4(-1.8834411,-1.4806935,-3.5924516,0.),vec4(-1.3279216,-1.0918057,-2.3124623,0.),vec4(0.2662234,0.23235129,0.44178495,0.))*buf[0]+mat4(vec4(-0.6299101,-0.5945583,-0.9125601,0.),vec4(0.17828953,0.18300213,0.18182953,0.),vec4(-2.96544,-2.5819945,-4.9001055,0.),vec4(1.4195864,1.1868085,2.5176322,0.))*buf[1]+mat4(vec4(-1.2584374,-1.0552157,-2.1688404,0.),vec4(-0.7200217,-0.52666044,-1.438251,0.),vec4(0.15345335,0.15196142,0.272854,0.),vec4(0.945728,0.8861938,1.2766753,0.))*buf[2]+mat4(vec4(-2.4218085,-1.968602,-4.35166,0.),vec4(-22.683098,-18.0544,-41.954372,0.),vec4(0.63792,0.5470648,1.1078634,0.),vec4(-1.5489894,-1.3075932,-2.6444845,0.))*buf[3]+mat4(vec4(-0.49252132,-0.39877754,-0.91366625,0.),vec4(0.95609266,0.7923952,1.640221,0.),vec4(0.30616966,0.15693925,0.8639857,0.),vec4(1.1825981,0.94504964,2.176963,0.))*buf[4]+mat4(vec4(0.35446745,0.3293795,0.59547555,0.),vec4(-0.58784515,-0.48177817,-1.0614829,0.),vec4(2.5271258,1.9991658,4.6846647,0.),vec4(0.13042648,0.08864098,0.30187556,0.))*buf[5]+mat4(vec4(-1.7718065,-1.4033192,-3.3355875,0.),vec4(3.1664357,2.638297,5.378702,0.),vec4(-3.1724713,-2.6107926,-5.549295,0.),vec4(-2.851368,-2.249092,-5.3013067,0.))*buf[6]+mat4(vec4(1.5203838,1.2212278,2.8404984,0.),vec4(1.5210563,1.2651345,2.683903,0.),vec4(2.9789467,2.4364579,5.2347264,0.),vec4(2.2270417,1.8825914,3.8028636,0.))*buf[7]+vec4(-1.5468478,-3.6171484,0.24762098,0.);
+    buf[0]=sigmoid(buf[0]);
+    return vec4(buf[0].x,buf[0].y,buf[0].z,1.);
 }
 
-vec3 rayDir(vec2 frag, vec2 res, vec2 offset, float dist){
-    float focal = res.y * max(dist, 1e-3);
-    return normalize(vec3(2.0 * (frag - offset) - res, focal));
-}
-
-float edgeFade(vec2 frag, vec2 res, vec2 offset){
-    vec2 toC = frag - 0.5 * res - offset;
-    float r = length(toC) / (0.5 * min(res.x, res.y));
-    float x = clamp(r, 0.0, 1.0);
-    float q = x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
-    float s = q * 0.5;
-    s = pow(s, 1.5);
-    float tail = 1.0 - pow(1.0 - s, 2.0);
-    s = mix(s, tail, 0.2);
-    float dn = (layeredNoise(frag * 0.15) - 0.5) * 0.0015 * s;
-    return clamp(s + dn, 0.0, 1.0);
-}
-
-mat3 rotX(float a){ float c = cos(a), s = sin(a); return mat3(1.0,0.0,0.0, 0.0,c,-s, 0.0,s,c); }
-mat3 rotY(float a){ float c = cos(a), s = sin(a); return mat3(c,0.0,s, 0.0,1.0,0.0, -s,0.0,c); }
-mat3 rotZ(float a){ float c = cos(a), s = sin(a); return mat3(c,-s,0.0, s,c,0.0, 0.0,0.0,1.0); }
-
-vec3 sampleGradient(float t){
-    t = clamp(t, 0.0, 1.0);
-    return texture(uGradient, vec2(t, 0.5)).rgb;
-}
-
-vec2 rot2(vec2 v, float a){
-    float s = sin(a), c = cos(a);
-    return mat2(c, -s, s, c) * v;
-}
-
-float bendAngle(vec3 q, float t){
-    float a = 0.8 * sin(q.x * 0.55 + t * 0.6)
-            + 0.7 * sin(q.y * 0.50 - t * 0.5)
-            + 0.6 * sin(q.z * 0.60 + t * 0.7);
-    return a;
+void mainImage(out vec4 fragColor,in vec2 fragCoord){
+    vec2 uv=fragCoord/uResolution.xy*2.-1.;
+    uv.y*=-1.;
+    uv+=uWarp*vec2(sin(uv.y*6.283+uTime*0.5),cos(uv.x*6.283+uTime*0.5))*0.05;
+    fragColor=cppn_fn(uv,0.1*sin(0.3*uTime),0.1*sin(0.69*uTime),0.1*sin(0.44*uTime));
 }
 
 void main(){
-    vec2 frag = gl_FragCoord.xy;
-    float t = uTime * uSpeed;
-    float jitterAmp = 0.1 * clamp(uNoiseAmount, 0.0, 1.0);
-    vec3 dir = rayDir(frag, uResolution, uOffset, 1.0);
-    float marchT = 0.0;
-    vec3 col = vec3(0.0);
-    float n = layeredNoise(frag);
-    vec4 c = cos(t * 0.2 + vec4(0.0, 33.0, 11.0, 0.0));
-    mat2 M2 = mat2(c.x, c.y, c.z, c.w);
-    float amp = clamp(uDistort, 0.0, 50.0) * 0.15;
+    vec4 col;mainImage(col,gl_FragCoord.xy);
+    col.rgb=hueShiftRGB(col.rgb,uHueShift);
+    float scanline_val=sin(gl_FragCoord.y*uScanFreq)*0.5+0.5;
+    col.rgb*=1.-(scanline_val*scanline_val)*uScan;
+    col.rgb+=(rand(gl_FragCoord.xy+uTime)-0.5)*uNoise;
+    gl_FragColor=vec4(clamp(col.rgb,0.0,1.0),1.0);
+}
+`;
 
-    mat3 rot3dMat = mat3(1.0);
-    if(uAnimType == 1){
-      vec3 ang = vec3(t * 0.31, t * 0.21, t * 0.17);
-      rot3dMat = rotZ(ang.z) * rotY(ang.y) * rotX(ang.x);
-    }
-    mat3 hoverMat = mat3(1.0);
-    if(uAnimType == 2){
-      vec2 m = uMouse * 2.0 - 1.0;
-      vec3 ang = vec3(m.y * 0.6, m.x * 0.6, 0.0);
-      hoverMat = rotY(ang.y) * rotX(ang.x);
-    }
-
-    for (int i = 0; i < 44; ++i) {
-        vec3 P = marchT * dir;
-        P.z -= 2.0;
-        float rad = length(P);
-        vec3 Pl = P * (10.0 / max(rad, 1e-6));
-
-        if(uAnimType == 0){
-            Pl.xz *= M2;
-        } else if(uAnimType == 1){
-      Pl = rot3dMat * Pl;
-        } else {
-      Pl = hoverMat * Pl;
-        }
-
-        float stepLen = min(rad - 0.3, n * jitterAmp) + 0.1;
-
-        float grow = smoothstep(0.35, 3.0, marchT);
-        float a1 = amp * grow * bendAngle(Pl * 0.6, t);
-        float a2 = 0.5 * amp * grow * bendAngle(Pl.zyx * 0.5 + 3.1, t * 0.9);
-        vec3 Pb = Pl;
-        Pb.xz = rot2(Pb.xz, a1);
-        Pb.xy = rot2(Pb.xy, a2);
-
-        float rayPattern = smoothstep(
-            0.5, 0.7,
-            sin(Pb.x + cos(Pb.y) * cos(Pb.z)) *
-            sin(Pb.z + sin(Pb.y) * cos(Pb.x + t))
-        );
-
-        if (uRayCount > 0) {
-            float ang = atan(Pb.y, Pb.x);
-            float comb = 0.5 + 0.5 * cos(float(uRayCount) * ang);
-            comb = pow(comb, 3.0);
-            rayPattern *= smoothstep(0.15, 0.95, comb);
-        }
-
-        vec3 spectralDefault = 1.0 + vec3(
-            cos(marchT * 3.0 + 0.0),
-            cos(marchT * 3.0 + 1.0),
-            cos(marchT * 3.0 + 2.0)
-        );
-
-        float saw = fract(marchT * 0.25);
-        float tRay = saw * saw * (3.0 - 2.0 * saw);
-        vec3 userGradient = 2.0 * sampleGradient(tRay);
-        vec3 spectral = (uColorCount > 0) ? userGradient : spectralDefault;
-        vec3 base = (0.05 / (0.4 + stepLen))
-                  * smoothstep(5.0, 0.0, rad)
-                  * spectral;
-
-        col += base * rayPattern;
-        marchT += stepLen;
-    }
-
-    col *= edgeFade(frag, uResolution, uOffset);
-    col *= uIntensity;
-
-    fragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-}`;
-
-const hexToRgb01 = (hex) => {
-  let h = hex.trim();
-  if (h.startsWith("#")) h = h.slice(1);
-  if (h.length === 3) {
-    const r = h[0],
-      g = h[1],
-      b = h[2];
-    h = r + r + g + g + b + b;
-  }
-  const intVal = parseInt(h, 16);
-  if (isNaN(intVal) || (h.length !== 6 && h.length !== 8)) return [1, 1, 1];
-  const r = ((intVal >> 16) & 255) / 255;
-  const g = ((intVal >> 8) & 255) / 255;
-  const b = (intVal & 255) / 255;
-  return [r, g, b];
-};
-
-const toPx = (v) => {
-  if (v == null) return 0;
-  if (typeof v === "number") return v;
-  const s = String(v).trim();
-  const num = parseFloat(s.replace("px", ""));
-  return isNaN(num) ? 0 : num;
-};
-
-const PrismaticBurst = ({
-  intensity = 2,
+export default function DarkVeil({
+  hueShift = 0,
+  noiseIntensity = 0,
+  scanlineIntensity = 0,
   speed = 0.5,
-  animationType = "rotate3d",
-  colors,
-  distort = 0,
-  paused = false,
-  offset = { x: 0, y: 0 },
-  hoverDampness = 0,
-  rayCount,
-  mixBlendMode = "lighten",
-}) => {
-  const containerRef = useRef(null);
-  const programRef = useRef(null);
-  const rendererRef = useRef(null);
-  const mouseTargetRef = useRef([0.5, 0.5]);
-  const mouseSmoothRef = useRef([0.5, 0.5]);
-  const pausedRef = useRef(paused);
-  const gradTexRef = useRef(null);
-  const hoverDampRef = useRef(hoverDampness);
-  const isVisibleRef = useRef(true);
-  const meshRef = useRef(null);
-  const triRef = useRef(null);
-
+  scanlineFrequency = 0,
+  warpAmount = 0,
+  resolutionScale = 1,
+}) {
+  const ref = useRef(null);
   useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
-  useEffect(() => {
-    hoverDampRef.current = hoverDampness;
-  }, [hoverDampness]);
+    const canvas = ref.current;
+    const parent = canvas.parentElement;
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const renderer = new Renderer({ dpr, alpha: false, antialias: false });
-    rendererRef.current = renderer;
-
-    const gl = renderer.gl;
-    gl.canvas.style.position = "absolute";
-    gl.canvas.style.inset = "0";
-    gl.canvas.style.width = "100%";
-    gl.canvas.style.height = "100%";
-    gl.canvas.style.mixBlendMode =
-      mixBlendMode && mixBlendMode !== "none" ? mixBlendMode : "";
-    container.appendChild(gl.canvas);
-
-    const white = new Uint8Array([255, 255, 255, 255]);
-    const gradientTex = new Texture(gl, {
-      image: white,
-      width: 1,
-      height: 1,
-      generateMipmaps: false,
-      flipY: false,
+    const renderer = new Renderer({
+      dpr: Math.min(window.devicePixelRatio, 2),
+      canvas,
     });
 
-    gradientTex.minFilter = gl.LINEAR;
-    gradientTex.magFilter = gl.LINEAR;
-    gradientTex.wrapS = gl.CLAMP_TO_EDGE;
-    gradientTex.wrapT = gl.CLAMP_TO_EDGE;
-    gradTexRef.current = gradientTex;
+    const gl = renderer.gl;
+    const geometry = new Triangle(gl);
 
     const program = new Program(gl, {
-      vertex: vertexShader,
-      fragment: fragmentShader,
+      vertex,
+      fragment,
       uniforms: {
-        uResolution: { value: [1, 1] },
         uTime: { value: 0 },
-
-        uIntensity: { value: 1 },
-        uSpeed: { value: 1 },
-        uAnimType: { value: 0 },
-        uMouse: { value: [0.5, 0.5] },
-        uColorCount: { value: 0 },
-        uDistort: { value: 0 },
-        uOffset: { value: [0, 0] },
-        uGradient: { value: gradientTex },
-        uNoiseAmount: { value: 0.8 },
-        uRayCount: { value: 0 },
+        uResolution: { value: new Vec2() },
+        uHueShift: { value: hueShift },
+        uNoise: { value: noiseIntensity },
+        uScan: { value: scanlineIntensity },
+        uScanFreq: { value: scanlineFrequency },
+        uWarp: { value: warpAmount },
       },
     });
 
-    programRef.current = program;
-
-    const triangle = new Triangle(gl);
-    const mesh = new Mesh(gl, { geometry: triangle, program });
-    triRef.current = triangle;
-    meshRef.current = mesh;
+    const mesh = new Mesh(gl, { geometry, program });
 
     const resize = () => {
-      const w = container.clientWidth || 1;
-      const h = container.clientHeight || 1;
-      renderer.setSize(w, h);
-      program.uniforms.uResolution.value = [
-        gl.drawingBufferWidth,
-        gl.drawingBufferHeight,
-      ];
+      const w = parent.clientWidth,
+        h = parent.clientHeight;
+      renderer.setSize(w * resolutionScale, h * resolutionScale);
+      program.uniforms.uResolution.value.set(w, h);
     };
 
-    let ro = null;
-    if ("ResizeObserver" in window) {
-      ro = new ResizeObserver(resize);
-      ro.observe(container);
-    } else {
-      window.addEventListener("resize", resize);
-    }
+    window.addEventListener("resize", resize);
     resize();
 
-    const onPointer = (e) => {
-      const rect = container.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / Math.max(rect.width, 1);
-      const y = (e.clientY - rect.top) / Math.max(rect.height, 1);
-      mouseTargetRef.current = [
-        Math.min(Math.max(x, 0), 1),
-        Math.min(Math.max(y, 0), 1),
-      ];
+    const start = performance.now();
+    let frame = 0;
+
+    const loop = () => {
+      program.uniforms.uTime.value =
+        ((performance.now() - start) / 1000) * speed;
+      program.uniforms.uHueShift.value = hueShift;
+      program.uniforms.uNoise.value = noiseIntensity;
+      program.uniforms.uScan.value = scanlineIntensity;
+      program.uniforms.uScanFreq.value = scanlineFrequency;
+      program.uniforms.uWarp.value = warpAmount;
+      renderer.render({ scene: mesh });
+      frame = requestAnimationFrame(loop);
     };
-    container.addEventListener("pointermove", onPointer, { passive: true });
 
-    let io = null;
-    if ("IntersectionObserver" in window) {
-      io = new IntersectionObserver(
-        (entries) => {
-          if (entries[0]) isVisibleRef.current = entries[0].isIntersecting;
-        },
-        { root: null, threshold: 0.01 }
-      );
-      io.observe(container);
-    }
-    const onVis = () => {};
-    document.addEventListener("visibilitychange", onVis);
-
-    let raf = 0;
-    let last = performance.now();
-    let accumTime = 0;
-
-    const update = (now) => {
-      const dt = Math.max(0, now - last) * 0.001;
-      last = now;
-      const visible = isVisibleRef.current && !document.hidden;
-      if (!pausedRef.current) accumTime += dt;
-      if (!visible) {
-        raf = requestAnimationFrame(update);
-        return;
-      }
-      const tau = 0.02 + Math.max(0, Math.min(1, hoverDampRef.current)) * 0.5;
-      const alpha = 1 - Math.exp(-dt / tau);
-      const tgt = mouseTargetRef.current;
-      const sm = mouseSmoothRef.current;
-      sm[0] += (tgt[0] - sm[0]) * alpha;
-      sm[1] += (tgt[1] - sm[1]) * alpha;
-      program.uniforms.uMouse.value = sm;
-      program.uniforms.uTime.value = accumTime;
-      renderer.render({ scene: meshRef.current });
-      raf = requestAnimationFrame(update);
-    };
-    raf = requestAnimationFrame(update);
+    loop();
 
     return () => {
-      cancelAnimationFrame(raf);
-      container.removeEventListener("pointermove", onPointer);
-      ro?.disconnect();
-      if (!ro) window.removeEventListener("resize", resize);
-      io?.disconnect();
-      document.removeEventListener("visibilitychange", onVis);
-      try {
-        container.removeChild(gl.canvas);
-      } catch (e) {
-        void e;
-      }
-      try {
-        meshRef.current?.remove?.();
-      } catch (e) {
-        void e;
-      }
-      try {
-        triRef.current?.remove?.();
-      } catch (e) {
-        void e;
-      }
-      try {
-        programRef.current?.remove?.();
-      } catch (e) {
-        void e;
-      }
-      try {
-        const glCtx = rendererRef.current?.gl;
-        if (glCtx && gradTexRef.current?.texture)
-          glCtx.deleteTexture(gradTexRef.current.texture);
-      } catch (e) {
-        void e;
-      }
-      programRef.current = null;
-      rendererRef.current = null;
-      gradTexRef.current = null;
-      meshRef.current = null;
-      triRef.current = null;
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", resize);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const canvas = rendererRef.current?.gl?.canvas;
-
-    if (canvas) {
-      canvas.style.mixBlendMode =
-        mixBlendMode && mixBlendMode !== "none" ? mixBlendMode : "";
-    }
-  }, [mixBlendMode]);
-
-  useEffect(() => {
-    const program = programRef.current;
-    const renderer = rendererRef.current;
-    const gradTex = gradTexRef.current;
-    if (!program || !renderer || !gradTex) return;
-
-    program.uniforms.uIntensity.value = intensity ?? 1;
-    program.uniforms.uSpeed.value = speed ?? 1;
-
-    const animTypeMap = {
-      rotate: 0,
-      rotate3d: 1,
-      hover: 2,
-    };
-    program.uniforms.uAnimType.value = animTypeMap[animationType ?? "rotate"];
-
-    program.uniforms.uDistort.value = typeof distort === "number" ? distort : 0;
-
-    const ox = toPx(offset?.x);
-    const oy = toPx(offset?.y);
-    program.uniforms.uOffset.value = [ox, oy];
-    program.uniforms.uRayCount.value = Math.max(0, Math.floor(rayCount ?? 0));
-
-    let count = 0;
-    if (Array.isArray(colors) && colors.length > 0) {
-      const gl = renderer.gl;
-      const capped = colors.slice(0, 64);
-      count = capped.length;
-      const data = new Uint8Array(count * 4);
-      for (let i = 0; i < count; i++) {
-        const [r, g, b] = hexToRgb01(capped[i]);
-        data[i * 4 + 0] = Math.round(r * 255);
-        data[i * 4 + 1] = Math.round(g * 255);
-        data[i * 4 + 2] = Math.round(b * 255);
-        data[i * 4 + 3] = 255;
-      }
-      gradTex.image = data;
-      gradTex.width = count;
-      gradTex.height = 1;
-      gradTex.minFilter = gl.LINEAR;
-      gradTex.magFilter = gl.LINEAR;
-      gradTex.wrapS = gl.CLAMP_TO_EDGE;
-      gradTex.wrapT = gl.CLAMP_TO_EDGE;
-      gradTex.flipY = false;
-      gradTex.generateMipmaps = false;
-      gradTex.format = gl.RGBA;
-      gradTex.type = gl.UNSIGNED_BYTE;
-      gradTex.needsUpdate = true;
-    } else {
-      count = 0;
-    }
-    program.uniforms.uColorCount.value = count;
-  }, [intensity, speed, animationType, colors, distort, offset, rayCount]);
-
-  return (
-    <div
-      className="w-full h-full relative overflow-hidden"
-      ref={containerRef}
-    />
-  );
-};
-
-export default PrismaticBurst;
+  }, [
+    hueShift,
+    noiseIntensity,
+    scanlineIntensity,
+    speed,
+    scanlineFrequency,
+    warpAmount,
+    resolutionScale,
+  ]);
+  return <canvas ref={ref} className="w-full h-full block" />;
+}
