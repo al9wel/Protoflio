@@ -52,7 +52,7 @@ const Header = () => {
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -10, opacity: 0 }}
-          transition={{ duration: 1, delay: 1.5, ease: "backOut" }}
+          transition={{ duration: 1, delay: 0.7, ease: "backOut" }}
           className="md:hidden">
           <BubbleMenu
             items={navItems}
