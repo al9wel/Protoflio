@@ -16,7 +16,7 @@ const MainContent = () => {
           noiseIntensity={0.15}
         />
       </div>
-      <main className="w-[97%] md:w-[95%] lg:w-[90%] h-[200vh] mx-auto mt-25 border-x border-[#252134]">
+      <main className="w-[97%] md:w-[95%] lg:w-[90%] h-[200vh] mx-auto mt-2 border-x border-[#252134]">
         <Hero />
         <About />
       </main>

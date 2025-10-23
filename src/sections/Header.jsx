@@ -37,7 +37,7 @@ const Header = () => {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -10, opacity: 0 }}
       transition={{ duration: 2, delay: 0, ease: "anticipate" }}
-      className="fixed top-0 left-0 w-full z-50 bg-[#0E0C15]/80 backdrop-blur-sm border-b border-[#252134]">
+      className=" top-0 left-0 w-full z-50 bg-[#0E0C15]/70 backdrop-blur-sm border-b border-[#252134]">
       <nav className="flex justify-between items-center h-20 pr-12 md:pr-4 lg:pr-12 text-[#CAC6DD] overflow-hidden">
         <motion.a
           // initial={{ y: -50, opacity: 0 }}
