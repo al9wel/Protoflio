@@ -270,9 +270,9 @@ export default function TiltedCard({
 
   return (
     <motion.figure
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 1, ease: "backOut" }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 3, ease: "backOut" }}
       ref={ref}
       className="relative sm:absolute top-[-80px] lg:top[40-px] right-0 w-full h-full [perspective:1000px] flex flex-col items-center justify-center"
       style={{
@@ -305,7 +305,6 @@ export default function TiltedCard({
             boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
           }}
         />
-
         {displayOverlayContent && overlayContent && (
           <motion.div className="absolute top-0 left-0 z-[2] will-change-transform [transform:translateZ(30px)]">
             {overlayContent}

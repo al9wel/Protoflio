@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
 import { twMerge } from "tailwind-merge";
 export const FlipWords = ({ words, duration = 1500, className }) => {

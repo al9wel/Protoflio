@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "motion/react";
 import TiltedCard from "../components/TitledCard";
 import al9wel from "../assets/images/al9wel3.jpeg";
 import { FlipWords } from "../components/FlipWords";
+import Aurora from "../components/Aurora";
 import TextType from "../components/TextType";
+import { twMerge } from "tailwind-merge";
 const Hero = () => {
   const [show, setShow] = useState(true);
   useEffect(() => {
@@ -15,13 +18,15 @@ const Hero = () => {
     };
   }, []);
   return (
-    <>
+    <div className="w-full h-screen sticky top-0 mx-auto  flex justify-start items-center flex-col">
       <motion.dev
+        initial={{ opacity: 0 }}
         animate={{
-          borderRadius: show ? "12px" : "0px",
+          borderRadius: show ? "20px" : "0px",
+          opacity: 1,
         }}
-        transition={{ duration: 1, ease: "backOut" }}
-        className="w-[97%] md:w-[95%] lg:w-[90%] bg-gray-400/20 backdrop-blur-xl mt-10 md:mt-22 round m-0 p-2 md:pb-8 relative ">
+        transition={{ duration: 5, ease: "backOut" }}
+        className="w-[97%] md:w-[95%] lg:w-[90%] bg-gray-400/20 backdrop-blur-xl mt-10 md:mt-22 round p-2 md:pb-8 relative ">
         <TiltedCard
           imageSrc={al9wel}
           altText="Kendrick Lamar - GNX Album Cover"
@@ -44,13 +49,7 @@ const Hero = () => {
           words={["Portflio", "Website", "Design"]}
           className="flip sm:mt-[-20px] ml-[-6px] md:mt-[-30px] md:ml-[-12px] text-gray-200 tracking-wider text-4xl md:text-7xl "
         />
-
-        {/* <p className="mt-2 text-gray-300 max-w-200 sm:max-w-80 md:max-w-90 lg:max-w-140 p-2 tracking-wider uppercase text-[14px] sm:text-[16px] md:text-[17px] lg:text-[19px]">
-          hello my name is salem alswil im{" "}
-          <span className=" text-teal-800 font-bold">frontend</span> devlolper
-          welcom
-        </p> */}
-        <div className=" relative w-full pl-2">
+        <div className="relative w-full pl-2">
           <TextType
             text={["Text typing effect", "for your websites", "Happy coding!"]}
             as="p"
@@ -66,7 +65,33 @@ const Hero = () => {
           />
         </div>
       </motion.dev>
-    </>
+      <div className=" z-10 mt-5 sm:mt-30  mx-auto md:text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            transition: {
+              duration: 1,
+              delay: 0.5 + 1 * 0.2,
+              ease: [0.25, 0.4, 0.25, 1],
+            },
+          }}>
+          <h1 className="text-[28px]  sm:text-5xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 md:mb-8 tracking-tight">
+            <span className="bg-clip-text hh text-transparent bg-gradient-to-b from-gray-200 to-white/10">
+              Elevate Your Digital Vision
+            </span>
+            <br />
+            <span
+              className={twMerge(
+                "bg-clip-text hh text-transparent text-[22px] sm:text-5xl md:text-5xl lg:text-6xl xl:text-7xl text-start bg-gradient-to-r from-emerald-900 via-white/90 to-green-950 "
+              )}>
+              Crafting Exceptional Websites
+            </span>
+          </h1>
+        </motion.div>
+      </div>
+    </div>
   );
 };
 
